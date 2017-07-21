@@ -193,6 +193,32 @@ describe('FarmerInterface', function() {
 
   });
 
+  describe('#_negotiator', function() {
+
+    it('should return false with too large shardSize', function(done) {
+      var farmer = new FarmerInterface({
+        keyPair: KeyPair(),
+        rpcPort: 0,
+        tunnelServerPort: 0,
+        doNotTraverseNat: true,
+        logger: kad.Logger(0),
+        maxShardSize: 99 * 1024 * 1024,
+        storageManager: new StorageManager(new RAMStorageAdapter()),
+        renterWhitelist: null
+      });
+      CLEANUP.push(farmer);
+      farmer._negotiator(Contract({
+        data_hash: utils.rmd160(' some data'),
+        renter_id: utils.rmd160('nodeid'),
+        data_size: 100 * 1024 * 1024
+      }), function(result) {
+        expect(result).to.equal(false);
+        done();
+      });
+    });
+
+  });
+
   describe('#_negotiateContract', function() {
 
     it('should ensure renter id is present and warn if not', function(done) {
@@ -592,6 +618,33 @@ describe('FarmerInterface', function() {
       });
     });
 
+    it('should reset contract count to 0 to prevent overflow', function(done) {
+      var farmer = new FarmerInterface({
+        keyPair: KeyPair(),
+        rpcPort: 0,
+        tunnelServerPort: 0,
+        doNotTraverseNat: true,
+        logger: kad.Logger(0),
+        storageManager: new StorageManager(new RAMStorageAdapter())
+      });
+      CLEANUP.push(farmer);
+      var _load = sinon.stub(farmer.storageManager, 'load').callsArgWith(1, {});
+      var _save = sinon.stub(farmer.storageManager, 'save');
+      var _verify = sinon.stub(Contract.prototype, 'verify').returns(true);
+      farmer._contractCount = Number.MAX_SAFE_INTEGER;
+      farmer._handleOfferRes({
+        result: {
+          contract: Contract({}).toObject()
+        }
+      }, new Contract(), {nodeID: 'nodeid'});
+      setImmediate(function() {
+        _load.restore();
+        _save.restore();
+        _verify.restore();
+        expect(farmer._contractCount).to.equal(0);
+        done();
+      });
+    });
   });
 
   describe('#_listenForContracts', function() {
