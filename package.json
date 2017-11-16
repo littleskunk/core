@@ -80,7 +80,7 @@
     "json-stable-stringify": "^1.0.1",
     "kad": "littleskunk/kad#test",
     "kad-logger-json": "^0.1.2",
-    "kad-quasar": "littleskunk/kad-quasar#test",
+    "kad-quasar": "^1.2.4",
     "kfs": "storj/kfs#275bbfe87ab09efdad2042114fd398dbfd02eadb",
     "knuth-shuffle": "^1.0.1",
     "leveldown": "^2.0.0",
